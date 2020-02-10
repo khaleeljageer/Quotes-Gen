@@ -1,39 +1,103 @@
 package com.jskaleel.quotesgen
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-
+import android.view.View
+import android.view.WindowInsets
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
+import coil.api.load
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_main.*
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
 
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
+        generateGradient()
+
+        ivTextFont.setOnClickListener {
+            changeFont()
+        }
+
+        fab.setOnClickListener {
+            txtQuote.text = Utils.getQuotes()
+        }
+
+        ivChangeBg.setOnClickListener {
+            generateGradient()
+        }
+
+        ivAbout.setOnClickListener {
+
         }
     }
 
+    private fun changeFont() {
+        Utils.getFont().apply {
+            ResourcesCompat.getFont(baseContext, this).apply {
+                txtQuote.typeface = this
+//                txtAuthor.typeface = this
+            }
+        }
+    }
+
+    private fun generateGradient() {
+        val colors = Utils.getColors()
+        val orientation = Utils.getOrientation()
+
+        val gd = GradientDrawable(orientation, colors)
+
+        gd.gradientType = GradientDrawable.LINEAR_GRADIENT
+        gd.gradientRadius = 300f
+        gd.cornerRadius = 0f
+
+        bgFrame.load(gd)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                saveImage()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun saveImage() {
+        val bitmap =
+            Bitmap.createBitmap(contentRoot.width, contentRoot.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        contentRoot.draw(canvas)
+        try {
+            val file = File(getExternalFilesDir(null), "DemoFile.png")
+            val output =
+                FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            output.close()
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 }
